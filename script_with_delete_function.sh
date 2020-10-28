@@ -10,6 +10,7 @@ entry4=1
 
 delete_a_repo()
 {
+<<<<<<< HEAD
 		pwd
 		ls
 		echo
@@ -24,11 +25,24 @@ delete_a_repo()
 
 		read -p "Are you sure you would like to delete $entry? This can't be undone. 1 = YES, 2 = NO: " entrySure
 		echo
+=======
+		ls
+		read -p "Enter the name of the repository that you would like to delete: " entry
+		
+		until [ -d $entry ]
+		do
+			read -p "Repository not found. Enter again: " entry
+		done
+
+
+		read -p "Are you sure you would like to delete $entry? This can't be undone. 1 = YES, 2 = NO: " entrySure
+>>>>>>> 07003ef36f79c1898c53d7552c3586c75231c7a6
 
 		#while [ entrySure != 1 || entrySure != 0]
 		while [[ "$entrySure" != "1" && "$entrySure" != "2" ]]
 		do
 			echo "That is not a vaild response."
+<<<<<<< HEAD
 			read -p "Enter 1 for YES or 2 for NO: " entrySure
 			echo
 		done
@@ -41,6 +55,14 @@ delete_a_repo()
 			echo "Directory ${finalDirectory} has been deleted."
 			echo
 			rm -rf $finalDirectory
+=======
+			read -p "Enter 1 for YES or 2 for NO: "
+		done
+
+		if [ entry1 == 1 ]
+		then
+			rm -rf entry
+>>>>>>> 07003ef36f79c1898c53d7552c3586c75231c7a6
 		fi
 
 		return 1
@@ -149,6 +171,7 @@ do
 			;;
 		2 ) #ls -d */ -1
 			ls
+<<<<<<< HEAD
 			echo
 			while [ $entry3 -ne 0 ]
 			do
@@ -161,6 +184,16 @@ do
 				read entry3
 				case $entry3 in
 					1 ) read -p "Enter the name of a repository that you want to go to: " rname
+=======
+			while [ $entry3 -ne 0 ]
+			do
+				echo " 1 - Go to the repository "
+				echo " 2 - Delete a repository "
+				echo " 0 - Exit"
+				read entry3
+				case $entry3 in
+					1 ) read -p "Enter the name of a repository that you want to go to " rname
+>>>>>>> 07003ef36f79c1898c53d7552c3586c75231c7a6
 						until [ -d $rname ]
 						do
 							read -p "Repository not found. Enter again: " rname
