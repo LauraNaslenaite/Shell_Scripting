@@ -1,17 +1,32 @@
-#!/usr/bin/bash
+#!/usr/bin/bash 
 
 num=1
 newFile=Y
 
+
+display_submenu ()
+{
+	echo
+	echo " 1 - Add a new file to a repository"
+	echo " 2 - Edit a file "
+	echo " 3 - Delete a file "
+	echo " 4 - List all files in the repository"
+	echo " 5 - View recent updates "
+	echo " 6 - Undo latest changes made to a file "
+	echo " 0 - Exit "
+	echo "-------------------------------------"
+}
+
 delete_a_repo()
 {
-		pwd
-		ls
+		directory=$(pwd)
+		echo "List of repositories in the directory ${directory}: "
+		ls -d */
 		echo
 		read -p "Enter the name of the repository that you would like to delete: " entry
 		echo
 
-		until [ -d $entry ]
+		until [ -d $entry ] 2> invalid_input.log
 		do
 			read -p "Repository not found. Enter again: " entry
 			echo
@@ -30,9 +45,9 @@ delete_a_repo()
 		if [ $entrySure == 1 ]
 		then
 
-			directory=$(pwd)
 			finalDirectory="${directory}/${entry}"
 			echo "Directory ${finalDirectory} has been deleted."
+			echo "'$entry' repository deleted" >> ${directory}/updates.log
 			echo
 			rm -rf $finalDirectory
 		fi
@@ -40,86 +55,270 @@ delete_a_repo()
 		return 1
 }
 
-display_submenu ()
+compile_c_program()
 {
+	pwd
+	ls -d */
 	echo
-	echo " 1 - Add a new file to a repository"
-	echo " 2 - Edit a file "
-	echo " 3 - Delete a file "
-	echo " 4 - List all files in the repository"
-	echo " 5 - View recent updates "
-	echo " 0 - Exit "
-	echo "-------------------------------------"
+	read -p "Enter the name of a repository: " cDir
+	echo
+
+	until [ -d $cDir ]
+	do
+		pwd
+		read -p "Repository not found. Enter again: " cDir
+		echo
+	done
+
+	cd $cDir
+	ls
+
+	echo
+	read -p "Enter the name of a C file (.c): " cFile
+	echo
+
+
+	while [[ $cFile != *.c ]]
+	do
+		read -p "C File not found. Enter again: " cFile
+		echo
+
+	done
+
+
+	gcc $cFile
+	sudo chmod 777 $cFile
+	./a.out
+	cd ..
+	echo
+	echo
+	return 1
+}
+
+compress_folder()
+{
+	pwd
+	ls -d */ 
+	echo
+	read -p "Enter the name of a repository you would like to compress: " dirName
+	echo
+
+	until [ -d $dirName ]
+	do
+		pwd
+		read -p "Repository not found. Enter again: " dirName
+		echo
+	done
+
+	read -p "What method would you like? 1 = zip, 2 = tar.gz: " compresssionChoice
+
+	while [[ "$compresssionChoice" != "1" && "$compresssionChoice" != "2" ]]
+	do
+		echo "That is not a vaild response."
+		read -p "Enter 1 for YES or 2 for NO: " compresssionChoice
+		echo
+		
+	done
+
+	if [ $compresssionChoice == 1 ]
+		then 
+				zip -r $dirName.zip $dirName
+				echo "$dirName has been zipped!"
+				echo
+
+		else [ $compresssionChoice == 2 ]
+			tar -czvf $dirName.tar.gz $dirName
+			echo "$dirName has been compressed with tar!"
+			echo
+		fi
+
+	echo
+	return 1
+}
+
+#check out - make a copy of an exisiting file and make changes on a copy
+#check in - updating original file version with changes made in the copy 
+edit_a_file ()
+{
+	cp $1 copy
+	nano copy
+
+	echo "Changes made: "
+	diff -u $1 copy | tee patchfile.patch
+	echo
+	read -p "Do you want to save changes to the '$1' file? 1 = YES, 2 = NO: " save_entry
+
+	while [[ "$save_entry" != "1" && "$save_entry" != "2" ]]
+	do
+		read -p "Invalid input. Enter 1 - YES or 2 - NO: " save_entry
+		echo
+	done
+
+	if [ $save_entry == 1 ]
+	then
+		echo
+		patch -b $1 patchfile.patch >> updates.log
+		echo "$USER made changes to '$1' file $(date)" >> updates.log
+		comment_entry=1
+		while [ $comment_entry -ne 2 ]
+		do
+			read -p "File was edited. Please, comment your changes. 1 = YES, 2 = NO: " comment_entry
+			case $comment_entry in
+				1 ) echo "Your comments (to stop press CTR+D) : "
+					comments=$(</dev/stdin)
+					echo "	Comments:" >> updates.log
+					echo "	"$comments"" >> updates.log
+					comment_entry=2
+					;;
+				2 ) break;
+					;;
+				* ) echo "Invalid input."
+					comment_entry=1
+					;;
+			esac
+		done
+	fi
+	rm -f copy
+	rm -f patchfile.patch
+}
+
+restore ()
+{
+	if [ ls "*.orig" ] >> error.log
+	then
+		read -p "Choose a file that you want to restore to its previous version " restore_file
+
+		until [ -e $restore_file ]
+		do
+			read -p "Invalid input. Enter file name from the list " restore_file
+		done
+
+		file_name=${restore_file%.*}
+		cp $restore_file $file_name
+		rm -f $restore_file
+
+		echo " '$file_name' file was restored by $USER" | tee -a updates.log
+	else 
+		echo "No backup versions of files created"
+	fi
+}
+
+add_a_new_file ()
+{
+	read -p "Enter a name for a file: " fname
+	while [ -e $fname ] #repeat the loop until the name of a file is not found in rep
+	do 
+		echo "A file with such a name already exists"
+		read -p "Enter a new name: " fname
+	done
+	touch  $fname
+	echo " '$fname' file created in the repository" >> updates.log
+}
+
+delete_a_file ()
+{
+	if [ -e updates.log ] 
+			then
+                local project_files1=$(ls -I "*.log")  #storing a list of project files (excluding logs) in a variable
+				if [ -z $project_files1 ]  2> error.log  #checking if a variable is empty. If it is empty - no file projects in rep.
+                then 
+                    echo "Not possible to delete. All files are already deleted."
+                else
+                    ls -I "*.log"
+                    read -p "Enter a name of a file to be deleted " deleteFile
+                    until [ -e $deleteFile ]
+                    do
+                        echo "File not found "
+                        ls -I "*.log"
+                        read -p "Enter a name of file that exists: " deleteFile
+                    done 
+                        echo "$deleteFile file was deleted " >> updates.log
+                        rm -f $deleteFile
+                fi
+			else 
+				echo "Not possible to delete a file. No files in the repository "
+			fi	
+}
+
+list_files_in_repo ()
+{
+	if [ -e updates.log ] 
+			then
+				echo "*Project Files* "
+				ls -I "*.log" -1
+				echo
+				echo "*Other Files* "
+				ls -1 *.log
+
+				view=1
+                while [ $view -ne 2 ] 
+                do
+					echo
+					echo "View content of a chosen file"
+                    echo "1 - Yes "
+                    echo "2 - No"
+                    echo "------------------------------"
+                    read view 2> invalid_input.log
+                    case $view in
+                        1 ) read -p "Enter a file name : " view_fname
+                                until [ -e $view_fname ]  #repeat the loop until the name of a file is found in rep
+                    			do
+                        			echo "File not found "
+                        			read -p "Enter a name of file that exists: " view_fname
+                    			done 
+								less $view_fname
+                                ;;
+                        2 ) break
+                                ;;
+                        * ) echo "Invalid input"
+                            view=1
+                                ;;
+                    esac
+                done
+			else 
+				echo "Repository is empty "
+			fi	
+			
 }
 
 actions_in_repo ()
 {
 	local entry4=11 #random number
 	while [ $entry4 -ne 0 ] #while not to exit the loop
-	do
-		display_submenu
-		read entry4 2> invalid_input.log
-		echo
+		do
+			echo
+			ls -1 -I "*.log"
+			echo
+			display_submenu
+			read entry4 2> invalid_input.log
+			echo
 		case $entry4 in
-		1 ) read -p "Enter a name for a file: " fname
-			while [ -e $fname ] #repeat the loop until the name of a file is not found in rep
-			do 
-				echo "A file with such a name already exists"
-				read -p "Enter a new name: " fname
-			done
-			touch  $fname
-			echo " '$fname' file created in the repository" >> updates.log
+		1 ) add_a_new_file
 			;;
 		2 ) if [ -e updates.log ] # if updates.log file exists in the rep, it means that there are/were some files created
 			then
 				local project_files=$(ls -I "*.log")  #storing a list of project files (excluding logs) in a variable
 				if [ -z $project_files ]  2> error.log #checking if a variable is empty. If it is empty - no file projects in rep.
-				then 
-                    			echo "Not possible to edit. All files were deleted."
-                		else
-                    			ls -I "*.log"
-                    			read -p "Enter a name of a file to be edited " editFile
-                    			until [ -e $editFile ]  #repeat the loop until the name of a file is found in rep
-                    			do
-                        			echo "File not found "
-                        			read -p "Enter a name of file that exists: " editFile
+                then 
+                    echo "Not possible to edit. All files were deleted."
+                else
+                    ls -I "*.log" -I "*.orig"
+                    read -p "Enter a name of a file to be edited " editFile
+                    until [ -e $editFile ]  #repeat the loop until the name of a file is found in rep
+                    do
+                        echo "File not found "
+                        read -p "Enter a name of file that exists: " editFile
 
-                    			done 
-                       			echo "'$editFile ' file was edited " >> updates.log
-                       			nano $editFile
-               			fi
+                    done 
+                       edit_a_file $editFile
+                fi
 			else 
 				echo "Not possible to edit. No files in the repository "
 			fi	
 			;;
-		3 ) if [ -e updates.log ] 
-			then
-                		local project_files1=$(ls -I "*.log")  #storing a list of project files (excluding logs) in a variable
-				if [ -z $project_files1 ]  2> error.log  #checking if a variable is empty. If it is empty - no file projects in rep.
-               			then 
-                   			echo "Not possible to delete. All files are already deleted."
-                		else
-                    			ls -I "*.log"
-                    			read -p "Enter a name of a file to be deleted " deleteFile
-                    			until [ -e $deleteFile ]
-                    			do
-                        			echo "File not found "
-                        			ls -I "*.log"
-                        			read -p "Enter a name of file that exists: " deleteFile
-                    			done 
-                        		echo "$deleteFile file was deleted " >> updates.log
-                        		rm -f $deleteFile
-               			fi
-			else 
-				echo "Not possible to delete a file. No files in the repository "
-			fi	
-			;;
-		4 ) if [ -e updates.log ] 
-			then
-				ls -1 
-			else 
-				echo "Repository is empty "
-			fi	
+		3 ) delete_a_file	
+				;;
+		4 ) list_files_in_repo
 			;;
 		5 ) if [ -e updates.log ]
 			then
@@ -128,6 +327,9 @@ actions_in_repo ()
 				echo "No updates meaning no files created in the repository "
 			fi	
 			;;
+		6 ) restore
+			;;
+
 		0 ) cd ..
 			break
 			;;
@@ -153,63 +355,67 @@ do
 	echo
 	case $num in
 		1 ) read -p "Enter a name for a repository: " entry
-            		while [[ "$entry" == *" "* ]]    #checking for invalid names for a rep, specifically containing whitespaces (e.g. 'nam e'), otherwise 2 separate repos are created
-           		do                     
-                		echo "Non valid repository name"
-               			read -p "Enter a name for a repository: " entry
-            		done
+            while [[ "$entry" == *" "* ]]    #checking for invalid names for a rep, specifically containing whitespaces (e.g. 'nam e'), otherwise 2 separate repos are created
+            do                     
+                echo "Non valid repository name"
+                read -p "Enter a name for a repository: " entry
+            done
 
-               		while [ -d $entry ]  2> invalid_input.log  
-               		do 
-                    		echo "A repository with such a name already exists"
-                    		read -p "Enter a new name for a repository: " entry
-                	done
-                	mkdir $entry
-                	echo "'$entry' repository created " >>  updates.log
-                	cd $entry
-                	echo
-                	number_of_files=0
-                	while [ $number_of_files -eq 0 ] 
-                	do
-                    		echo "Add a new file to a repository"
-                    		echo "y - Yes "
-                    		echo "n - No"
-                    		echo "------------------------------"
-                    		read newFile 2> invalid_input.log
-                    		case $newFile in
-                       		y|Y ) read -p "Enter a name of a file: " fname
-                               		while [[ "$fname" == *" "* ]]  
-                                	do                     
-                                    		echo "Name cannot contain whitespaces."
-                                    		read -p "Enter a name for a file: " fname
-                                	done
-                                	touch  $fname
-                                	echo "'$fname' file created in repository" >> updates.log
-                                	((number_of_files++))
-                               		 ;;
-                       		n|N ) cd ..
-                                	break
-                               		 ;;
-                       		* ) echo "Invalid input"
-					newFile=Y
-                                	;;
-                    		esac
-               		 done    
-                	if [ $number_of_files -eq 1 ]  #if there is at least one file added to rep
-                	then
-                    		actions_in_repo
-			fi
+                while [ -d $entry ]  2> invalid_input.log  
+                do 
+                    echo "A repository with such a name already exists"
+                    read -p "Enter a new name for a repository: " entry
+                done
+                mkdir $entry
+                echo "'$entry' repository created " >>  updates.log
+                cd $entry
+                echo
+                number_of_files=0
+                while [ $number_of_files -eq 0 ] 
+                do
+                    echo "Add a new file to a repository"
+                    echo "y - Yes "
+                    echo "n - No"
+                    echo "------------------------------"
+                    read newFile 2> invalid_input.log
+                    case $newFile in
+                        y|Y ) read -p "Enter a name of a file: " fname
+                                while [[ "$fname" == *" "* ]]  
+                                do                     
+                                    echo "Name cannot contain whitespaces."
+                                    read -p "Enter a name for a file: " fname
+                                done
+                                touch  $fname
+                                echo "'$fname' file created in repository" >> updates.log
+                                ((number_of_files++))
+                                ;;
+                        n|N ) cd ..
+                                break
+                                ;;
+                        * ) echo "Invalid input"
+                            newFile=Y
+                                ;;
+                    esac
+                done
+                    
+                if [ $number_of_files -eq 1 ]  #if there is at least one file added to rep
+                then
+                    actions_in_repo
+			    fi
 			;;
 		2 ) ls -d */ 2> error.log   #listing only repositories. If there are no repositories found, an error message is sent to a log rather than being displayed for a user
 			if [ -s error.log ]     #checking if there are any text in log. If there is, it means that an error message was received from previous line indicating that there are no reps
 			then 
 				echo "No repositories created "
 			else
-            		entry3=1;
+            entry3=1;
 			while [ $entry3 -ne 0 ]
 			do
+				echo "------------------------------"
 				echo " 1 - Go to the repository "
 				echo " 2 - Delete a repository "
+				echo " 3 - Compile a C program"
+				echo " 4 - Compress a repository"
 				echo " 0 - Exit"
 				echo "------------------------------"
 				read entry3 2> invalid_input.log
@@ -224,10 +430,14 @@ do
 						actions_in_repo
 						;;
 
-					2 ) delete_a_repo
+					2 )	delete_a_repo
 						break
 						;;	
+					3 )compile_c_program
+						;;
 
+					4 )compress_folder
+						;;
 					0 ) break
 						;;
 					* ) echo "Invalid input"
