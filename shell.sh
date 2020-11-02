@@ -13,7 +13,7 @@ display_submenu ()
 	echo " 4 - List all files in the repository"
 	echo " 5 - View recent updates "
 	echo " 6 - Undo latest changes made to a file "
-	echo " 0 - Exit "
+	echo " 0 - Back "
 	echo "-------------------------------------"
 }
 
@@ -87,7 +87,7 @@ compile_c_program()
 
 
 	gcc $cFile
-	sudo chmod 777 $cFile
+	chmod 777 $cFile
 	./a.out
 	cd ..
 	echo
@@ -454,7 +454,7 @@ do
 				echo " 2 - Delete a repository "
 				echo " 3 - Compile a C program"
 				echo " 4 - Compress a repository"
-				echo " 0 - Exit"
+				echo " 0 - Back"
 				echo "------------------------------"
 				read entry3 2> invalid_input.log
 				case $entry3 in
