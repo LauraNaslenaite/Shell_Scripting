@@ -55,6 +55,34 @@ delete_a_repo()
 		return 1
 }
 
+delete_all_repos()
+{
+
+	read -p "Are you sure you want to delete all repositories? This action is perminant. Please double check. | 1 = Yes | 2 = No |" deletevalidation
+	while [[ "$deletevalidation" != "1" && "$deletevalidation" != "2" ]]
+		do
+			echo "Response Invalid!"
+			read -p "| 1 = Yes | 2 = No |" deletevalidation
+			echo
+		done
+
+	if [ $deletevalidation == 1 ]
+			then
+			
+	directory=$(pwd)
+				echo "All directories have been deleted."
+				cd $directory
+				mv shell.sh ..
+				rm -rf *
+				cd ..
+				mv shell.sh $directory 
+				cd $directory
+			fi
+
+			return 1
+
+}
+
 compile_c_program()
 {
 	pwd
@@ -381,6 +409,7 @@ do
 	echo " 1 - ADD A NEW REPOSITORY"
 	echo " 2 - CHECK CURRENT REPOSITORIES"
 	echo " 3 - RECENT UPDATES "
+	echo " 4 - DELETE ALL REPOSITORIES"
 	echo " 0 - Exit"
 	echo "-----------------------------------"
 	read num 2> invalid_input.log    #if invalid input is not an integer, an error message is written to a log instead of being diplayed to a user
@@ -507,6 +536,8 @@ do
 				echo "No updates"
 			fi	
 			echo
+			;;
+		4 ) delete_all_repos
 			;;
 		0 ) break 
 			echo
