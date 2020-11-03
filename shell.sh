@@ -71,12 +71,7 @@ delete_all_repos()
 			
 	directory=$(pwd)
 				echo "All directories have been deleted."
-				cd $directory
-				mv shell.sh ..
-				rm -rf *
-				cd ..
-				mv shell.sh $directory 
-				cd $directory
+				find . \! -name 'shell.sh' -delete
 			fi
 
 			return 1
