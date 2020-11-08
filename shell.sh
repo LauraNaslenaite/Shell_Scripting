@@ -3,7 +3,7 @@
 num=1
 newFile=Y
 
-
+#Printing out menu to user
 display_submenu ()
 {
 	echo
@@ -16,32 +16,34 @@ display_submenu ()
 	echo " 0 - Back "
 	echo "-------------------------------------"
 }
-
+#Function for deleting one of the users repositorys 
 delete_a_repo()
 {
 		directory=$(pwd)
 		echo "List of repositories in the directory ${directory}: "
 		ls -d */
 		echo
+		#Request user input for repo name
 		read -p "Enter the name of the repository that you would like to delete: " entry
 		echo
-
+#Loop
 		until [ -d $entry ] 2> invalid_input.log
 		do
+		#Re Request Name after error
 			read -p "Repository not found. Enter again: " entry
 			echo
 		done
-
+#Safety check
 		read -p "Are you sure you would like to delete $entry? This can't be undone. 1 = YES, 2 = NO: " entrySure
 		echo
-
+#User choice
 		while [[ "$entrySure" != "1" && "$entrySure" != "2" ]]
 		do
 			echo "That is not a vaild response."
 			read -p "Enter 1 for YES or 2 for NO: " entrySure
 			echo
 		done
-
+#If user inputs 1
 		if [ $entrySure == 1 ]
 		then
 
@@ -54,18 +56,19 @@ delete_a_repo()
 
 		return 1
 }
-
+#Delete all of the user created files to start fresh
 delete_all_repos()
 {
-
+#Safety Check
 	read -p "Are you sure you want to delete all repositories? This action is perminant. Please double check. | 1 = Yes | 2 = No |" deletevalidation
+	#User Choice
 	while [[ "$deletevalidation" != "1" && "$deletevalidation" != "2" ]]
 		do
 			echo "Response Invalid!"
 			read -p "| 1 = Yes | 2 = No |" deletevalidation
 			echo
 		done
-
+#If user chooses 1
 	if [ $deletevalidation == 1 ]
 			then
 			
@@ -77,18 +80,20 @@ delete_all_repos()
 			return 1
 
 }
-
+#Compiling a c program
 compile_c_program()
 {
 	pwd
 	ls -d */
 	echo
+	#Request a repo name from user
 	read -p "Enter the name of a repository: " cDir
 	echo
 
 	until [ -d $cDir ]
 	do
 		pwd
+		#ReRequest input for error
 		read -p "Repository not found. Enter again: " cDir
 		echo
 	done
@@ -97,12 +102,14 @@ compile_c_program()
 	ls
 
 	echo
+	#Request file name
 	read -p "Enter the name of a C file (.c): " cFile
 	echo
 
 
 	while [[ $cFile != *.c ]]
 	do
+	#Get another input from user after fail
 		read -p "C File not found. Enter again: " cFile
 		echo
 
@@ -117,7 +124,7 @@ compile_c_program()
 	echo
 	return 1
 }
-
+#Compress folder function
 compress_folder()
 {
 	directory=$(pwd)
@@ -133,7 +140,7 @@ compress_folder()
 		read -p "Repository not found. Enter again: " dirName
 		echo
 	done
-
+#User Choice
 	read -p "What method would you like? 1 = zip, 2 = tar.gz: " compresssionChoice
 
 	while [[ "$compresssionChoice" != "1" && "$compresssionChoice" != "2" ]]
@@ -143,7 +150,7 @@ compress_folder()
 		echo
 		
 	done
-
+#If choice one selected
 	if [ $compresssionChoice == 1 ]
 		then 
 				zip -r $dirName.zip $dirName
@@ -152,7 +159,7 @@ compress_folder()
 				echo >> ${directory}/updates.log
 
 				echo
-
+#If choice two selected
 		else [ $compresssionChoice == 2 ]
 			tar -czvf $dirName.tar.gz $dirName
 			echo "$dirName has been compressed with tar!"
@@ -177,13 +184,13 @@ edit_a_file ()
 	diff -u $1 copy | tee patchfile.patch
 	echo
 	read -p "Do you want to save changes to the '$1' file? 1 = YES, 2 = NO: " save_entry
-
+#User Choice
 	while [[ "$save_entry" != "1" && "$save_entry" != "2" ]]
 	do
 		echo "Invalid input"
 		read -p "ENTER 1 for YES or 2 for NO: " save_entry
 	done
-
+#If choice one selected
 	if [ $save_entry == 1 ]
 	then
 		echo
@@ -213,16 +220,18 @@ edit_a_file ()
 	rm -f patchfile.patch
 	echo
 }
-
+#Restore Function
 restore ()
 {
 	ls *orig 2> error.log  
 	if [ -s error.log ] 
 	then
+	#Tell user they havent got any backups
 	echo "No backup versions of files created"
 
 	else 
 		echo
+		#User choice output
 		read -p "Choose a file that you want to restore to its previous version: " restore_file
 
 		until [ -e $restore_file ]
@@ -240,12 +249,14 @@ restore ()
 	fi
 	echo
 }
-
+#Add a new file to repo
 add_a_new_file ()
 {
+#request filename from user
 	read -p "Enter a name for a file: " fname
 	while [ -e $fname ] #repeat the loop until the name of a file is not found in rep
 	do 
+	#tell user file exists
 		echo "A file with such a name already exists"
 		read -p "Enter a new name: " fname
 	done
@@ -254,7 +265,7 @@ add_a_new_file ()
 	echo >> updates.log
 	echo
 }
-
+#Deleting a file from a repo
 delete_a_file ()
 {
 	if [ "$(ls -A $(pwd))" ] 
@@ -282,7 +293,7 @@ delete_a_file ()
 			fi	
 		echo
 }
-
+#List
 list_files_in_repo ()
 {
 	if [ "$(ls -A $(pwd))" ] 
@@ -394,7 +405,7 @@ actions_in_repo ()
 		esac
 	done
 }
-
+#Reprint menu 
 while [ $num -ne 0 ]
 do
 	echo
@@ -472,6 +483,7 @@ do
             entry3=1;
 			while [ $entry3 -ne 0 ]
 			do
+			#Print menu
 				echo
 				echo "------------------------------"
 				echo " 1 - Go to the repository "
